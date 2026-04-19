@@ -15,6 +15,10 @@ func (f *fakeFetcher) GetWikiPageTree(_ context.Context, _, _ string) (*azuredev
 	return f.tree, nil
 }
 
+func (f *fakeFetcher) GetWikiPageContent(_ context.Context, _, _, _ string) (string, error) {
+	return "", nil
+}
+
 func TestRunWritesAndPrunes(t *testing.T) {
 	dir := t.TempDir()
 

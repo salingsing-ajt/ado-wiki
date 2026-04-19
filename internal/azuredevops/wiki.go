@@ -36,3 +36,20 @@ func (c *Client) GetWikiPageTree(ctx context.Context, project, wiki string) (*Pa
 	}
 	return &root, nil
 }
+
+// GetWikiPageContent fetches the markdown body of a single page by path.
+// Needed because /pages?recursionLevel=Full returns subpages with empty
+// Content and without ids, so per-page fetching is the only option.
+func (c *Client) GetWikiPageContent(ctx context.Context, project, wiki, pagePath string) (string, error) {
+	apiPath := fmt.Sprintf("/%s/_apis/wiki/wikis/%s/pages",
+		url.PathEscape(project), url.PathEscape(wiki))
+	q := url.Values{
+		"path":           {pagePath},
+		"includeContent": {"True"},
+	}
+	var page Page
+	if _, err := c.get(ctx, apiPath, q, &page); err != nil {
+		return "", err
+	}
+	return page.Content, nil
+}

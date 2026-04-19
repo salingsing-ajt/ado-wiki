@@ -14,6 +14,7 @@ import (
 // satisfies it in production and fakes satisfy it in tests.
 type Fetcher interface {
 	GetWikiPageTree(ctx context.Context, project, wiki string) (*azuredevops.Page, error)
+	GetWikiPageContent(ctx context.Context, project, wiki, pagePath string) (string, error)
 }
 
 type Options struct {
@@ -31,6 +32,27 @@ type Result struct {
 func Run(ctx context.Context, opts Options) (*Result, error) {
 	tree, err := opts.Fetcher.GetWikiPageTree(ctx, opts.Project, opts.Wiki)
 	if err != nil {
+		return nil, err
+	}
+	// ADO's recursive pages endpoint returns empty Content and no ids for
+	// subpages; fill in each body with a second call keyed on path.
+	var fill func(p *azuredevops.Page) error
+	fill = func(p *azuredevops.Page) error {
+		if p.Path != "/" && p.Content == "" {
+			body, err := opts.Fetcher.GetWikiPageContent(ctx, opts.Project, opts.Wiki, p.Path)
+			if err != nil {
+				return fmt.Errorf("fetch content path=%s: %w", p.Path, err)
+			}
+			p.Content = body
+		}
+		for i := range p.SubPages {
+			if err := fill(&p.SubPages[i]); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if err := fill(tree); err != nil {
 		return nil, err
 	}
 	outDir := filepath.Clean(opts.OutputDir)
