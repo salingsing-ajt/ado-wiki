@@ -5,7 +5,9 @@
       "Bash(git push *)",
       "Bash(git remote *)",
       "Bash(go test *)",
-      "Bash(go build *)"
+      "Bash(go build *)",
+      "Bash(make release-snapshot *)",
+      "Bash(goreleaser release *)"
     ]
   },
   "enableAllProjectMcpServers": true,
