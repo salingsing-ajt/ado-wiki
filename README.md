@@ -19,15 +19,29 @@ Or without make:
 
     go build -o wiki ./cmd/wiki
 
+## Configure
+
+There is no default sync folder — pick or create an empty directory
+and `cd` into it. That directory is where `wiki.yaml` must live and
+where pages will be written.
+
+    mkdir ~/my-wiki
+    cd ~/my-wiki
+
+Generate a `wiki.yaml` template by running `./wiki sync` once (it
+writes the template and exits), then edit it:
+
+    organization: your-azure-devops-organization
+    project: Your Project Name
+    wiki: Your Project.wiki
+
 ## Run
+
+From inside that same directory:
 
     ./wiki login
     ./wiki sync
     ./wiki logout
-
-Run from a directory where you want the wiki to be synced; `wiki sync`
-writes a `wiki.yaml` template on first run and fills in the tree on the
-second.
 
 ## Test
 
