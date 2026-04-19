@@ -1,0 +1,8 @@
+/wiki
+/wiki.exe
+/dist/
+*.test
+coverage.*
+.idea/
+.vscode/
+.DS_Store
