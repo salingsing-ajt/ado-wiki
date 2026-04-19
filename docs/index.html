@@ -61,7 +61,7 @@
 
 <h2>Setup</h2>
 <ol>
-  <li>Create a PAT in Azure DevOps with <strong>Wiki (read)</strong> scope.</li>
+  <li>Create a PAT in Azure DevOps with <strong>Wiki (Read)</strong> and <strong>Code (Read)</strong> scopes. Wiki scope pulls page content; Code scope is required to download image attachments from the wiki's backing git repo.</li>
   <li>Make a folder for your wiki, e.g. <code>~/my-wiki</code>.</li>
   <li>Download the right archive from the <a href="https://github.com/salingsing-ajt/ado-wiki/releases/latest">latest release</a>, extract it, and drop the <code>wiki</code> binary (<code>wiki.exe</code> on Windows) into that folder:
     <ul>
@@ -84,12 +84,12 @@ wiki: Your Project.wiki</code></pre>
 <h2>Use</h2>
 <pre><code>cd ~/my-wiki
 ./wiki login         # store PAT
-./wiki sync          # pulls pages into articles/&lt;wiki&gt;/
+./wiki sync          # pulls pages + attachments into articles/&lt;wiki&gt;/
 ./wiki logout        # remove PAT</code></pre>
+<p>Images land in <code>articles/&lt;wiki&gt;/.attachments/</code> so <code>/.attachments/…</code> references in the markdown resolve in any viewer.</p>
 
 <h2>Limitations</h2>
 <ul>
-  <li>Attachments are not synced.</li>
   <li>Cross-page links don't resolve when opening <code>.md</code> files directly.</li>
   <li>Local edits to synced files are lost if the page is deleted upstream.</li>
 </ul>

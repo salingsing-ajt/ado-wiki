@@ -64,24 +64,27 @@ func newSyncCmd() *cobra.Command {
 			client := azuredevops.NewClient(baseURLFn(cfg.Organization), pat)
 
 			out := cmd.OutOrStdout()
-			progress := func(done, total int, path string) {
-				const maxPath = 60
-				trimmed := path
-				if len(trimmed) > maxPath {
-					trimmed = "…" + trimmed[len(trimmed)-maxPath+1:]
-				}
-				fmt.Fprintf(out, "\r\033[2K[%d/%d] %s", done, total, trimmed)
-				if done == total {
-					fmt.Fprintln(out)
+			lineProgress := func(label string) func(done, total int, name string) {
+				return func(done, total int, name string) {
+					const maxLabel = 60
+					trimmed := name
+					if len(trimmed) > maxLabel {
+						trimmed = "…" + trimmed[len(trimmed)-maxLabel+1:]
+					}
+					fmt.Fprintf(out, "\r\033[2K[%s %d/%d] %s", label, done, total, trimmed)
+					if done == total {
+						fmt.Fprintln(out)
+					}
 				}
 			}
 
 			res, err := sync.Run(cmd.Context(), sync.Options{
-				Fetcher:   client,
-				Project:   cfg.Project,
-				Wiki:      cfg.Wiki,
-				OutputDir: outDir,
-				Progress:  progress,
+				Fetcher:        client,
+				Project:        cfg.Project,
+				Wiki:           cfg.Wiki,
+				OutputDir:      outDir,
+				Progress:       lineProgress("pages"),
+				AttachProgress: lineProgress("attach"),
 			})
 			if errors.Is(err, azuredevops.ErrUnauthorized) {
 				return fmt.Errorf("Azure DevOps rejected the PAT — run 'wiki login' with a fresh token")
@@ -89,8 +92,12 @@ func newSyncCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "synced %d pages to %s (pruned %d stale).\n",
-				res.Written, outDir, res.Deleted)
+			msg := fmt.Sprintf("synced %d pages, %d attachments to %s (pruned %d stale)",
+				res.Written, res.Attachments, outDir, res.Deleted)
+			if res.Missing > 0 {
+				msg += fmt.Sprintf("; %d attachment(s) missing from repo and skipped", res.Missing)
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), msg+".")
 			return nil
 		},
 	}

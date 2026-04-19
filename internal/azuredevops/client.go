@@ -37,9 +37,26 @@ func DefaultBaseURL(org string) string {
 }
 
 func (c *Client) get(ctx context.Context, path string, q url.Values, out any) (http.Header, error) {
-	u, err := url.Parse(c.baseURL + path)
+	h, body, err := c.getRaw(ctx, path, q, "application/json")
 	if err != nil {
 		return nil, err
+	}
+	if err := json.Unmarshal(body, out); err != nil {
+		preview := string(body)
+		if len(preview) > 200 {
+			preview = preview[:200] + "..."
+		}
+		return nil, fmt.Errorf("decode %s: %w (body: %s)", path, err, strings.TrimSpace(preview))
+	}
+	return h, nil
+}
+
+// getRaw performs the request and returns the response body bytes. Used for
+// binary payloads (wiki attachments) that don't decode as JSON.
+func (c *Client) getRaw(ctx context.Context, path string, q url.Values, accept string) (http.Header, []byte, error) {
+	u, err := url.Parse(c.baseURL + path)
+	if err != nil {
+		return nil, nil, err
 	}
 	if q == nil {
 		q = url.Values{}
@@ -49,22 +66,34 @@ func (c *Client) get(ctx context.Context, path string, q url.Values, out any) (h
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(":"+c.pat)))
-	req.Header.Set("Accept", "application/json")
+	if accept != "" {
+		req.Header.Set("Accept", accept)
+	}
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
-		return nil, fmt.Errorf("%w (http %d)", ErrUnauthorized, resp.StatusCode)
+		return nil, nil, fmt.Errorf("%w (http %d)", ErrUnauthorized, resp.StatusCode)
+	}
+	// ADO often returns a 200 HTML sign-in page instead of a proper 401 when
+	// the PAT is missing/expired — detect and treat as auth failure.
+	if accept == "application/json" && looksLikeHTML(resp.Header.Get("Content-Type"), body) {
+		return nil, nil, fmt.Errorf("%w (received HTML sign-in page — PAT is likely expired or revoked)", ErrUnauthorized)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("azure devops http %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		return nil, nil, fmt.Errorf("azure devops http %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
-	if err := json.Unmarshal(body, out); err != nil {
-		return nil, err
+	return resp.Header, body, nil
+}
+
+func looksLikeHTML(contentType string, body []byte) bool {
+	if strings.Contains(strings.ToLower(contentType), "text/html") {
+		return true
 	}
-	return resp.Header, nil
+	trimmed := strings.TrimLeft(string(body), " \t\r\n")
+	return strings.HasPrefix(trimmed, "<!DOCTYPE") || strings.HasPrefix(trimmed, "<html") || strings.HasPrefix(trimmed, "<!doctype")
 }

@@ -15,6 +15,18 @@ type Page struct {
 	SubPages []Page `json:"subPages"`
 }
 
+type WikiInfo struct {
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	RepositoryID   string `json:"repositoryId"`
+	ProjectID      string `json:"projectId"`
+	Type           string `json:"type"`
+	MappedPath     string `json:"mappedPath"`
+	Version        struct {
+		Version string `json:"version"`
+	} `json:"version"`
+}
+
 // Warn is where continuation-token warnings go; tests override it.
 var Warn io.Writer = os.Stderr
 
@@ -52,4 +64,35 @@ func (c *Client) GetWikiPageContent(ctx context.Context, project, wiki, pagePath
 		return "", err
 	}
 	return page.Content, nil
+}
+
+// GetWikiInfo fetches wiki metadata, including the backing git repository id
+// used for downloading attachments.
+func (c *Client) GetWikiInfo(ctx context.Context, project, wiki string) (*WikiInfo, error) {
+	apiPath := fmt.Sprintf("/%s/_apis/wiki/wikis/%s",
+		url.PathEscape(project), url.PathEscape(wiki))
+	var info WikiInfo
+	if _, err := c.get(ctx, apiPath, nil, &info); err != nil {
+		return nil, err
+	}
+	return &info, nil
+}
+
+// GetWikiAttachment downloads a single wiki attachment (image/file) by name,
+// reading the raw blob from the wiki's backing git repository. `name` is the
+// filename as it appears under `.attachments/` in the wiki.
+// The /wiki/.../attachments endpoint is upload-only (PUT), so downloads go
+// through git items instead.
+func (c *Client) GetWikiAttachment(ctx context.Context, project, repoID, name string) ([]byte, error) {
+	apiPath := fmt.Sprintf("/%s/_apis/git/repositories/%s/items",
+		url.PathEscape(project), url.PathEscape(repoID))
+	q := url.Values{
+		"path":    {"/.attachments/" + name},
+		"$format": {"octetStream"},
+	}
+	_, body, err := c.getRaw(ctx, apiPath, q, "")
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }

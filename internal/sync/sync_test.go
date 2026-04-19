@@ -19,6 +19,14 @@ func (f *fakeFetcher) GetWikiPageContent(_ context.Context, _, _, _ string) (str
 	return "", nil
 }
 
+func (f *fakeFetcher) GetWikiInfo(_ context.Context, _, _ string) (*azuredevops.WikiInfo, error) {
+	return &azuredevops.WikiInfo{RepositoryID: "fake-repo-id"}, nil
+}
+
+func (f *fakeFetcher) GetWikiAttachment(_ context.Context, _, _, _ string) ([]byte, error) {
+	return nil, nil
+}
+
 func TestRunWritesAndPrunes(t *testing.T) {
 	dir := t.TempDir()
 
