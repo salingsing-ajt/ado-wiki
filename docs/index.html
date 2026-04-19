@@ -88,6 +88,10 @@ wiki: Your Project.wiki</code></pre>
 ./wiki logout        # remove PAT</code></pre>
 <p>Images land in <code>articles/&lt;wiki&gt;/.attachments/</code> so <code>/.attachments/…</code> references in the markdown resolve in any viewer.</p>
 
+<h2>Ask an AI agent about your wiki</h2>
+<p>Once the sync finishes, open the folder in <a href="https://claude.com/claude-code">Claude Code</a>, <a href="https://cursor.com">Cursor</a>, or any other agentic editor and ask plain-English questions — &ldquo;where do we document the deployment flow?&rdquo;, &ldquo;what is the Signup Manager?&rdquo;, etc. The agent reads the <code>.md</code> files directly.</p>
+<p>The release ships a <code>CLAUDE.md</code> file alongside the binary. Keep it in the same folder as <code>wiki.yaml</code> — agents that follow the <code>CLAUDE.md</code>/<code>AGENTS.md</code> convention will pick it up automatically and know to answer from <code>articles/</code> instead of guessing.</p>
+
 <h2>Limitations</h2>
 <ul>
   <li>Cross-page links don't resolve when opening <code>.md</code> files directly.</li>
