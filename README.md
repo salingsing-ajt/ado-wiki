@@ -11,8 +11,8 @@ Developer setup for the `wiki` CLI.
 
 ## Clone and build
 
-    git clone https://github.com/rj-ajt/wiki-vault.git
-    cd wiki-vault
+    git clone https://github.com/salingsing-ajt/ado-wiki.git
+    cd ado-wiki
     make build           # produces ./wiki (or wiki.exe on Windows)
 
 Or without make:
