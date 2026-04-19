@@ -222,11 +222,12 @@ func TestSyncHappyPath(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("execute: %v\nout=%s", err, out.String())
 	}
-	body, err := os.ReadFile(filepath.Join(dir, "Home.md"))
+	outDir := filepath.Join(dir, "Platform.wiki")
+	body, err := os.ReadFile(filepath.Join(outDir, "Home.md"))
 	if err != nil || string(body) != "# Home" {
 		t.Fatalf("Home.md = %q err=%v", body, err)
 	}
-	if _, err := os.Stat(filepath.Join(dir, ".wikisync.json")); err != nil {
+	if _, err := os.Stat(filepath.Join(outDir, ".wikisync.json")); err != nil {
 		t.Fatalf(".wikisync.json missing: %v", err)
 	}
 }

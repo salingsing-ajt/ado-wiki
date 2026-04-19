@@ -21,23 +21,19 @@ Or without make:
 
 ## Configure
 
-There is no default sync folder — pick or create an empty directory
-and `cd` into it. That directory is where `wiki.yaml` must live and
-where pages will be written.
-
-    mkdir ~/my-wiki
-    cd ~/my-wiki
-
-Generate a `wiki.yaml` template by running `./wiki sync` once (it
-writes the template and exits), then edit it:
+`wiki.yaml` must live in the directory you run `wiki sync` from.
+Generate a template by running `./wiki sync` once (it writes the
+template and exits), then edit it:
 
     organization: your-azure-devops-organization
     project: Your Project Name
     wiki: Your Project.wiki
 
-## Run
+`wiki sync` creates a subfolder named after the `wiki:` value
+(e.g. `Your Project.wiki/`) and writes the synced pages there —
+no need to `mkdir` one yourself.
 
-From inside that same directory:
+## Run
 
     ./wiki login
     ./wiki sync

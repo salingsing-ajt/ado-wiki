@@ -3,7 +3,8 @@
     "allow": [
       "Bash(go version *)",
       "Bash(git push *)",
-      "Bash(git remote *)"
+      "Bash(git remote *)",
+      "Bash(go test *)"
     ]
   },
   "enableAllProjectMcpServers": true,

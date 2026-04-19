@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -53,13 +55,18 @@ func newSyncCmd() *cobra.Command {
 				return fmt.Errorf("wiki.yaml: %w", err)
 			}
 
+			outDir, err := wikiSubdir(cwd, cfg.Wiki)
+			if err != nil {
+				return err
+			}
+
 			client := azuredevops.NewClient(baseURLFn(cfg.Organization), pat)
 
 			res, err := sync.Run(cmd.Context(), sync.Options{
 				Fetcher:   client,
 				Project:   cfg.Project,
 				Wiki:      cfg.Wiki,
-				OutputDir: cwd,
+				OutputDir: outDir,
 			})
 			if errors.Is(err, azuredevops.ErrUnauthorized) {
 				return fmt.Errorf("Azure DevOps rejected the PAT — run 'wiki login' with a fresh token")
@@ -68,8 +75,18 @@ func newSyncCmd() *cobra.Command {
 				return err
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "synced %d pages to %s (pruned %d stale).\n",
-				res.Written, cwd, res.Deleted)
+				res.Written, outDir, res.Deleted)
 			return nil
 		},
 	}
+}
+
+// wikiSubdir resolves <parent>/<wiki> and rejects names that would
+// escape parent (path separators, empty, . or ..).
+func wikiSubdir(parent, wiki string) (string, error) {
+	name := strings.TrimSpace(wiki)
+	if name == "" || name == "." || name == ".." || strings.ContainsAny(name, `/\`) {
+		return "", fmt.Errorf("wiki.yaml: %q is not a valid folder name for 'wiki'", wiki)
+	}
+	return filepath.Join(parent, name), nil
 }
