@@ -12,8 +12,6 @@
     --code-bg: #f6f8fa;
     --border: #d0d7de;
     --accent: #0969da;
-    --warn-bg: #fff8c5;
-    --warn-border: #d4a72c;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -23,22 +21,19 @@
       --code-bg: #161b22;
       --border: #30363d;
       --accent: #2f81f7;
-      --warn-bg: #372f00;
-      --warn-border: #9e6a03;
     }
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
   body {
     font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    max-width: 780px;
+    max-width: 720px;
     margin: 0 auto;
     padding: 2.5rem 1.25rem 4rem;
   }
   h1 { font-size: 2rem; margin: 0 0 0.25rem; }
-  h2 { font-size: 1.35rem; margin: 2.5rem 0 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
-  h3 { font-size: 1.05rem; margin: 1.5rem 0 0.4rem; }
-  p, ul, ol { margin: 0.6rem 0; }
+  h2 { font-size: 1.25rem; margin: 2rem 0 0.5rem; }
+  p, ul { margin: 0.5rem 0; }
   a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
   .tagline { color: var(--muted); margin-bottom: 1.5rem; }
@@ -53,137 +48,51 @@
     background: var(--code-bg);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 0.9rem 1rem;
+    padding: 0.8rem 1rem;
     overflow-x: auto;
   }
   pre code { background: transparent; padding: 0; font-size: 0.9em; }
-  ul li { margin: 0.25rem 0; }
-  .note {
-    background: var(--warn-bg);
-    border-left: 4px solid var(--warn-border);
-    padding: 0.7rem 1rem;
-    border-radius: 4px;
-    margin: 1rem 0;
-  }
-  nav.toc {
-    background: var(--code-bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.75rem 1rem;
-    margin: 1.25rem 0 2rem;
-  }
-  nav.toc ul { list-style: none; padding-left: 0; margin: 0.25rem 0; }
-  nav.toc li { margin: 0.15rem 0; }
-  kbd {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.85em;
-    background: var(--code-bg);
-    border: 1px solid var(--border);
-    border-bottom-width: 2px;
-    border-radius: 4px;
-    padding: 0.1em 0.4em;
-  }
-  footer { color: var(--muted); font-size: 0.85rem; margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 1rem; }
 </style>
 </head>
 <body>
 
 <h1>wiki</h1>
-<p class="tagline">A small cross-platform CLI that downloads an Azure DevOps wiki to the local filesystem, preserving the page hierarchy.</p>
+<p class="tagline">Download an Azure DevOps wiki to your local filesystem.</p>
 
-<nav class="toc" aria-label="Table of contents">
-  <strong>Contents</strong>
-  <ul>
-    <li><a href="#install">Install</a></li>
-    <li><a href="#configuration">Configuration</a></li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#how-sync-works">How sync works</a></li>
-    <li><a href="#pat-storage">PAT storage</a></li>
-    <li><a href="#limitations">Known limitations</a></li>
-  </ul>
-</nav>
-
-<p>A page with children becomes <code>Page.md</code> plus a sibling <code>Page/</code> directory, so the layout on disk mirrors what you see in the Azure DevOps wiki tree.</p>
-
-<h2 id="install">Install</h2>
+<h2>Setup</h2>
 <ol>
-  <li>Go to the <a href="https://github.com/rj-ajt/wiki-vault/releases/latest">latest release</a> and download the archive for your OS and architecture (Windows, macOS, Linux; amd64 or arm64).</li>
-  <li>Extract it and place the <code>wiki</code> binary (<code>wiki.exe</code> on Windows) somewhere on your <code>PATH</code>.</li>
-  <li>Verify it works:
-    <pre><code>wiki --help</code></pre>
+  <li>Create a PAT in Azure DevOps with <strong>Wiki (read)</strong> scope.</li>
+  <li>Make a folder for your wiki, e.g. <code>~/my-wiki</code>.</li>
+  <li>Download the right archive from the <a href="https://github.com/rj-ajt/wiki-vault/releases/latest">latest release</a>, extract it, and drop the <code>wiki</code> binary (<code>wiki.exe</code> on Windows) into that folder:
+    <ul>
+      <li><strong>Windows</strong> — <code>wiki_*_windows_amd64.zip</code> (Intel/AMD) or <code>wiki_*_windows_arm64.zip</code></li>
+      <li><strong>macOS</strong> — <code>wiki_*_darwin_arm64.tar.gz</code> (Apple Silicon: M1/M2/M3/M4) or <code>wiki_*_darwin_amd64.tar.gz</code> (Intel Macs)</li>
+      <li><strong>Linux</strong> — <code>wiki_*_linux_amd64.tar.gz</code> or <code>wiki_*_linux_arm64.tar.gz</code></li>
+    </ul>
   </li>
-</ol>
-<div class="note">
-  On macOS, Gatekeeper may block an unsigned binary on first run. If you see &ldquo;cannot be opened because the developer cannot be verified,&rdquo; open <strong>System Settings → Privacy &amp; Security</strong> and click <em>Allow Anyway</em>.
-</div>
-
-<h2 id="configuration">Configuration</h2>
-<p>Before you can sync, you'll need two things:</p>
-
-<h3>1. A Personal Access Token (PAT)</h3>
-<p>Create one in Azure DevOps with the <strong>Wiki (read)</strong> scope. That's the only permission the CLI needs.</p>
-
-<h3>2. A <code>wiki.yaml</code> in your sync folder</h3>
-<p>Pick (or create) an empty folder on your machine — this is where the wiki's Markdown files will be written. For example:</p>
-<pre><code>mkdir ~/my-wiki
-cd ~/my-wiki</code></pre>
-<p><code>wiki sync</code> always looks for <code>wiki.yaml</code> in the current working directory, so that's where it needs to live:</p>
-<pre><code>~/my-wiki/
-├── wiki.yaml          &lt;-- here
-└── (synced pages go here)</code></pre>
-<p>Don't have one yet? Just run <code>wiki sync</code> once — it drops a template for you. Then edit it to point at your wiki:</p>
-<pre><code>organization: your-azure-devops-organization
+  <li>From that folder, generate a config template:
+    <pre><code>cd ~/my-wiki
+./wiki sync          # writes wiki.yaml, then exits</code></pre>
+  </li>
+  <li>Edit <code>wiki.yaml</code>:
+    <pre><code>organization: your-azure-devops-organization
 project: Your Project Name
 wiki: Your Project.wiki</code></pre>
+  </li>
+</ol>
 
-<h2 id="usage">Usage</h2>
+<h2>Use</h2>
+<pre><code>cd ~/my-wiki
+./wiki login         # store PAT
+./wiki sync          # pulls pages into articles/&lt;wiki&gt;/
+./wiki logout        # remove PAT</code></pre>
 
-<h3>1. Sign in</h3>
-<pre><code>wiki login           # prompts for the PAT (no echo, no shell history)</code></pre>
-<p>Alternative forms:</p>
-<pre><code>cat pat.txt | wiki login
-wiki login --pat &lt;PAT&gt;   # discouraged: leaks to shell history and ps</code></pre>
-
-<h3>2. Sync a wiki</h3>
-<pre><code>cd /path/to/sync/into
-wiki sync            # first run writes a wiki.yaml template; edit it
-wiki sync            # second run reads wiki.yaml and pulls the pages</code></pre>
-
-<h3>3. Sign out</h3>
-<pre><code>wiki logout          # remove the stored PAT</code></pre>
-
-<h2 id="how-sync-works">How sync works</h2>
-<p><code>sync</code> fetches the whole wiki in one Azure DevOps API call and writes <code>.md</code> files mirroring the page hierarchy.</p>
+<h2>Limitations</h2>
 <ul>
-  <li>Pages removed from ADO since the last run are pruned based on a local <code>.wikisync.json</code> manifest.</li>
-  <li>User-authored files the tool has never written are left alone.</li>
-  <li>If you're syncing into a git repo, add <code>.wikisync.json</code> to <code>.gitignore</code> — it's local bookkeeping, not content.</li>
+  <li>Attachments are not synced.</li>
+  <li>Cross-page links don't resolve when opening <code>.md</code> files directly.</li>
+  <li>Local edits to synced files are lost if the page is deleted upstream.</li>
 </ul>
-
-<h2 id="pat-storage">PAT storage</h2>
-<p>The PAT is stored in the OS-native keyring:</p>
-<ul>
-  <li><strong>Windows</strong> — Credential Manager</li>
-  <li><strong>macOS</strong> — Keychain</li>
-  <li><strong>Linux</strong> — Secret Service</li>
-</ul>
-<div class="note">
-  On headless Linux (CI runners, containers, servers with no desktop session) the Secret Service isn't available and <code>wiki login</code> will fail — run the CLI from a machine that has one.
-</div>
-
-<h2 id="limitations">Known limitations</h2>
-<ul>
-  <li>Attachments (<code>.attachments/</code>) are not synced — embedded images render as broken links.</li>
-  <li>Cross-page links like <code>[Setup](/Onboarding/Setup)</code> won't resolve when opening <code>.md</code> files directly.</li>
-  <li>First sync into a non-empty directory will overwrite any pre-existing <code>.md</code> file whose name matches an ADO page.</li>
-  <li>Local edits to synced files are lost on the next <code>sync</code> if the page is deleted upstream.</li>
-  <li>No 429/5xx retry handling; very large wikis may hit Azure DevOps throttling or exceed the single-response budget.</li>
-  <li>Default NTFS/APFS volumes are case-insensitive, so sibling wiki pages that differ only in case (e.g. <code>Setup</code> and <code>setup</code>) will overwrite each other.</li>
-</ul>
-
-<footer>
-  Looking for setup instructions for contributors? See the <a href="../README.md">README</a>.
-</footer>
 
 </body>
 </html>
