@@ -55,10 +55,11 @@ func newSyncCmd() *cobra.Command {
 				return fmt.Errorf("wiki.yaml: %w", err)
 			}
 
-			outDir, err := wikiSubdir(cwd, cfg.Wiki)
-			if err != nil {
-				return err
+			wikiName := strings.TrimSpace(cfg.Wiki)
+			if wikiName == "" || wikiName == "." || wikiName == ".." || strings.ContainsAny(wikiName, `/\`) {
+				return fmt.Errorf("wiki.yaml: %q is not a valid folder name for 'wiki'", cfg.Wiki)
 			}
+			outDir := filepath.Join(cwd, "articles", wikiName)
 
 			client := azuredevops.NewClient(baseURLFn(cfg.Organization), pat)
 
@@ -79,14 +80,4 @@ func newSyncCmd() *cobra.Command {
 			return nil
 		},
 	}
-}
-
-// wikiSubdir resolves <parent>/<wiki> and rejects names that would
-// escape parent (path separators, empty, . or ..).
-func wikiSubdir(parent, wiki string) (string, error) {
-	name := strings.TrimSpace(wiki)
-	if name == "" || name == "." || name == ".." || strings.ContainsAny(name, `/\`) {
-		return "", fmt.Errorf("wiki.yaml: %q is not a valid folder name for 'wiki'", wiki)
-	}
-	return filepath.Join(parent, name), nil
 }

@@ -29,9 +29,9 @@ template and exits), then edit it:
     project: Your Project Name
     wiki: Your Project.wiki
 
-`wiki sync` creates a subfolder named after the `wiki:` value
-(e.g. `Your Project.wiki/`) and writes the synced pages there —
-no need to `mkdir` one yourself.
+`wiki sync` creates `articles/<wiki>/` next to `wiki.yaml` (where
+`<wiki>` comes from the `wiki:` value) and writes the synced pages
+there — no need to `mkdir` one yourself.
 
 ## Run
 

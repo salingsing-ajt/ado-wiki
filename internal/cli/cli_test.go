@@ -222,7 +222,7 @@ func TestSyncHappyPath(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("execute: %v\nout=%s", err, out.String())
 	}
-	outDir := filepath.Join(dir, "Platform.wiki")
+	outDir := filepath.Join(dir, "articles", "Platform.wiki")
 	body, err := os.ReadFile(filepath.Join(outDir, "Home.md"))
 	if err != nil || string(body) != "# Home" {
 		t.Fatalf("Home.md = %q err=%v", body, err)
