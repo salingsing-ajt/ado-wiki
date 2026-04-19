@@ -22,6 +22,10 @@ type Options struct {
 	Project   string
 	Wiki      string
 	OutputDir string
+	// Progress, if set, is called after each per-page content fetch with the
+	// 1-based index, total pages being fetched, and the page path just
+	// fetched. Optional — nil means silent.
+	Progress func(done, total int, path string)
 }
 
 type Result struct {
@@ -36,6 +40,8 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 	}
 	// ADO's recursive pages endpoint returns empty Content and no ids for
 	// subpages; fill in each body with a second call keyed on path.
+	total := countFetchable(tree)
+	done := 0
 	var fill func(p *azuredevops.Page) error
 	fill = func(p *azuredevops.Page) error {
 		if p.Path != "/" && p.Content == "" {
@@ -44,6 +50,10 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 				return fmt.Errorf("fetch content path=%s: %w", p.Path, err)
 			}
 			p.Content = body
+			done++
+			if opts.Progress != nil {
+				opts.Progress(done, total, p.Path)
+			}
 		}
 		for i := range p.SubPages {
 			if err := fill(&p.SubPages[i]); err != nil {
@@ -106,4 +116,18 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 		return nil, err
 	}
 	return &Result{Written: len(writes), Deleted: deleted}, nil
+}
+
+func countFetchable(p *azuredevops.Page) int {
+	if p == nil {
+		return 0
+	}
+	n := 0
+	if p.Path != "/" && p.Content == "" {
+		n = 1
+	}
+	for i := range p.SubPages {
+		n += countFetchable(&p.SubPages[i])
+	}
+	return n
 }

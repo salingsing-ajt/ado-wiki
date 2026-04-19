@@ -63,11 +63,25 @@ func newSyncCmd() *cobra.Command {
 
 			client := azuredevops.NewClient(baseURLFn(cfg.Organization), pat)
 
+			out := cmd.OutOrStdout()
+			progress := func(done, total int, path string) {
+				const maxPath = 60
+				trimmed := path
+				if len(trimmed) > maxPath {
+					trimmed = "…" + trimmed[len(trimmed)-maxPath+1:]
+				}
+				fmt.Fprintf(out, "\r\033[2K[%d/%d] %s", done, total, trimmed)
+				if done == total {
+					fmt.Fprintln(out)
+				}
+			}
+
 			res, err := sync.Run(cmd.Context(), sync.Options{
 				Fetcher:   client,
 				Project:   cfg.Project,
 				Wiki:      cfg.Wiki,
 				OutputDir: outDir,
+				Progress:  progress,
 			})
 			if errors.Is(err, azuredevops.ErrUnauthorized) {
 				return fmt.Errorf("Azure DevOps rejected the PAT — run 'wiki login' with a fresh token")
